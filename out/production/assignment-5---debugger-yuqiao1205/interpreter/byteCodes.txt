@@ -1,0 +1,15 @@
+ARGS, ArgsCode
+BOP, BopCode
+CALL, CallCode
+DUMP, DumpCode
+FALSEBRANCH, FalseBranchCode
+GOTO, GoToCode
+HALT, HaltCode
+LABEL, LabelCode
+LIT, LitCode
+LOAD, LoadCode
+POP, PopCode
+READ, ReadCode
+RETURN, ReturnCode
+STORE, StoreCode
+WRITE, WriteCode

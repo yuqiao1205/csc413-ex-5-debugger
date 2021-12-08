@@ -1,67 +1,182 @@
 package interpreter.debugger;
 
+import javax.xml.bind.Binder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 public class FunctionEnvironmentRecord {
 
-  public void beginScope() {
+    private String functionName;
+    private int startLineNumber;
+    private int endLineNumber;
+    private int currentLineNumber;
+    private Binder tail;
 
-  }
+    public int getCurrentLineNumber() {
+        return currentLineNumber;
+    }
 
-  public void setFunctionInfo(String functionName, int startingLineNumber, int endingLineNumber) {
+    private final Map<String, Binder> symbols = new HashMap<>();
 
-  }
+    public Map<String, Binder> getSymbols() {
+        return symbols;
+    }
 
-  public void setCurrentLineNumber(int currentLineNumber) {
+    public static class Binder {
+        private final Object value;   // Actually the offset of the symbol
+        private final String symbol;  // prior symbol in same scope
+        private final Binder prev;    // referenced prior binder of the same symbol
+        private final Binder tail;    // last binder entered(used to pop)
 
-  }
+        // restore this when closing scope
+        Binder(Object v, String n, Binder p, Binder t) {
+            value = v;
+            symbol = n;
+            prev = p;
+            tail = t;
+        }
 
-  public void enter(String symbol, int value) {
+        public Object getValue() {
+            return value;
+        }
 
-  }
+        public String getSymbol() {
+            return symbol;
+        }
 
-  public void pop(int count) {
+        public Binder getPreviousBinder() {
+            return prev;
+        }
 
-  }
+        public Binder getTail() {
+            return tail;
+        }
+    }
 
-  /**
-   * Utility method to test your implementation. The output should be:
-   * (<>, -, -, -, -)
-   * (<>, g, 1, 20, -)
-   * (<>, g, 1, 20, 5)
-   * (<a/4>, g, 1, 20, 5)
-   * (<b/2, a/4>, g, 1, 20, 5)
-   * (<b/2, a/4, c/7>, g, 1, 20, 5)
-   * (<b/2, a/1, c/7>, g, 1, 20, 5)
-   * (<b/2, a/4>, g, 1, 20, 5)
-   * (<a/4>, g, 1, 20, 5)
-   */
-  public static void main(String[] args) {
-    FunctionEnvironmentRecord record = new FunctionEnvironmentRecord();
+    public void beginScope() {
+    }
 
-    record.beginScope();
-    System.out.println(record);
+    public void setFunctionInfo(String functionName, int startingLineNumber, int endingLineNumber) {
+        this.functionName = functionName;
+        this.startLineNumber = startingLineNumber;
+        this.endLineNumber = endingLineNumber;
+    }
 
-    record.setFunctionInfo("g", 1, 20);
-    System.out.println(record);
+    public void setCurrentLineNumber(int currentLineNumber) {
+        this.currentLineNumber = currentLineNumber;
+    }
+ 
+    public void enter(String symbol, int value) {
+        Binder binder = new Binder(value, symbol, symbols.get(symbol), tail);
+        symbols.put(symbol, binder);
+        tail = binder;
+    }
 
-    record.setCurrentLineNumber(5);
-    System.out.println(record);
+    public void pop(int count) {
+        for (int i = 0; i < count; i++) {
+            if (tail.getPreviousBinder() != null) {
+                // revert value for symbol
+                symbols.put(tail.getSymbol(), tail.getPreviousBinder());
+            } else {
+                // remove symbol from table
+                symbols.remove(tail.getSymbol());
+            }
+            tail = tail.getTail();
+        }
+    }
 
-    record.enter("a", 4);
-    System.out.println(record);
+    public String symbolTableToString() {
+        // (<b, 2>, <a, 1>, <c,7>), g, 1, 20, 5)
+        List<String> bindings = symbols
+                .entrySet()
+                .stream()
+                .map(s -> {
+                    StringBuilder buffer = new StringBuilder();
 
-    record.enter("b", 2);
-    System.out.println(record);
+                    String name = s.getKey();
+                    Binder current = s.getValue();
 
-    record.enter("c", 7);
-    System.out.println(record);
+                    boolean visited = false;
+                    while (current != null) {
+                        if (visited) {
+                            buffer.append("-");
+                        } else {
+                            visited = true;
+                        }
 
-    record.enter("a", 1);
-    System.out.println(record);
+                        buffer.append("<").append(name).append(",").append(current.getValue()).append(">");
 
-    record.pop(2);
-    System.out.println(record);
+                        current = current.getPreviousBinder();
+                    }
 
-    record.pop(1);
-    System.out.println(record);
-  }
+                    return buffer.toString();
+                })
+                .collect(Collectors.toList());
+
+        return "(" + String.join(", ", bindings) + ")";
+    }
+
+
+
+    @Override
+    public String toString() {
+        //(<a/4>, 1, 20, g, 5)
+        String fn = (functionName == null) ? "-" : functionName;
+
+        return "< " + symbolTableToString() +
+                ", " + printHelper(startLineNumber, 0) +
+                ", " + printHelper(endLineNumber, 0) +
+                ", " + fn +
+                ", " + printHelper(currentLineNumber, 0)
+                + " >";
+    }
+
+    private String printHelper(Object x, Object noValue) {
+        return (x == noValue) ? "-" : x.toString();
+    }
+
+    /**
+     * Utility method to test your implementation. The output should be:
+     * (<>, -, -, -, -)
+     * (<>, g, 1, 20, -)
+     * (<>, g, 1, 20, 5)
+     * (<a/4>, g, 1, 20, 5)
+     * (<b/2, a/4>, g, 1, 20, 5)
+     * (<b/2, a/4, c/7>, g, 1, 20, 5)
+     * (<b/2, a/1, c/7>, g, 1, 20, 5)
+     * (<b/2, a/4>, g, 1, 20, 5)
+     * (<a/4>, g, 1, 20, 5)
+     */
+    public static void main(String[] args) {
+        FunctionEnvironmentRecord record = new FunctionEnvironmentRecord();
+
+        record.beginScope();
+        System.out.println(record);
+
+        record.setFunctionInfo("g", 1, 20);
+        System.out.println(record);
+
+        record.setCurrentLineNumber(5);
+        System.out.println(record);
+
+        record.enter("a", 4);
+        System.out.println(record);
+
+        record.enter("b", 2);
+        System.out.println(record);
+
+        record.enter("c", 7);
+        System.out.println(record);
+
+        record.enter("a", 1);
+        System.out.println(record);
+
+        record.pop(2);
+        System.out.println(record);
+
+        record.pop(1);
+        System.out.println(record);
+    }
 }

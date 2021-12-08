@@ -7,15 +7,26 @@ import interpreter.CodeTable;
 public class DebuggerCodeTable {
   private static HashMap<String, String> codeMap = new HashMap<>();
 
-  public static void init() {
+  static {
+    // Make sure the code table is proactively intialized
     CodeTable.init();
 
-    // Initialize the new byte codes required for debugging:
-    // codeMap.put(... etc. ...)
+    init();
   }
 
-  public static String get(String code) {
-    String result = codeMap.get(code.trim().toUpperCase());
+  public static void init() {
+    // Initialize the new byte codes required for debugging:
+    // codeMap.put(... etc. ...)
+    codeMap.put("LINE","debuggercodes.LineCode");
+    codeMap.put("FUNCTION","debuggercodes.FunctionCode");
+    codeMap.put("FORMAL","debuggercodes.FormalCode");
+  }
+
+  public static String getClassName(String code) {
+    // Trim and upper case to make sure that we can look up correctly in the code tables
+    code = code.trim().toUpperCase();
+
+    String result = codeMap.get(code);
 
     if(result == null) {
       return CodeTable.get(code);
