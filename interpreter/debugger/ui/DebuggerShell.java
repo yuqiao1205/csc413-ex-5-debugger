@@ -49,9 +49,8 @@ public class DebuggerShell {
                     return new ContinueCommand(debugger);
                 case "exit":
                     return new ExitCommand(debugger);
-
                 default:
-                    System.out.printf("Invalid input " + line + "!");
+                    System.out.printf("Invalid input " + line + "!%n");
             }
         }
 
