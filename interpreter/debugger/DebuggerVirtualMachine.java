@@ -61,11 +61,7 @@ public class DebuggerVirtualMachine extends VirtualMachine {
         }
     }
 
-    //todo encounter breakpoint then stop
     public void debugExecution(DebugExecutionEnum mode) {
-        // note: similar to step, but it will stop only at the breakpoints
-        // todo handle function environment record when call function
-
         while (isRunning) {
             ByteCode code = program.getCode(pc);
 
@@ -79,7 +75,7 @@ public class DebuggerVirtualMachine extends VirtualMachine {
                     pc++;
                     return;
                 } else if (mode == DebugExecutionEnum.CONTINUE) {
-                    // Continue mode
+                    // Continue mode, it will stop only at the breakpoints
                     for (Debugger.Entry entry : debugger.getSourceLines()) {
                         if (entry.getLineNumber() == lineNo && entry.getBreakpointLine()) {
                             pc++;
