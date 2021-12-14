@@ -11,11 +11,21 @@ public class FunctionEnvironmentRecord {
     private int startLineNumber;
     private int endLineNumber;
     private int currentLineNumber;
+
     private Binder tail;
 
     public int getCurrentLineNumber() {
         return currentLineNumber;
     }
+
+    public int getStartLineNumber() {
+        return startLineNumber;
+    }
+
+    public int getEndLineNumber() {
+        return endLineNumber;
+    }
+
 
     private final Map<String, Binder> symbols = new HashMap<>();
 
